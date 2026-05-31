@@ -1,0 +1,916 @@
+\documentclass[11pt,a4paper,openany]{ctexbook}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs,longtable,tabularx,array}
+\usepackage[table]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{multicol}
+\usepackage{graphicx}
+
+\definecolor{mainteal}{HTML}{0F8B8D}
+\definecolor{darkink}{HTML}{15202B}
+\definecolor{muted}{HTML}{5E6B75}
+\definecolor{softteal}{HTML}{EAF7F7}
+\definecolor{softamber}{HTML}{FFF5DD}
+\definecolor{softred}{HTML}{FFF0F0}
+\definecolor{linegray}{HTML}{DDE4EA}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=mainteal,
+  urlcolor=mainteal,
+  citecolor=mainteal,
+  pdftitle={Derivatives Pricing Review Notes},
+  pdfauthor={Course material summary}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{衍生工具定价 / Derivatives Pricing}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.35em}
+\setlist[itemize]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=0.25em,topsep=0.25em}
+\renewcommand{\arraystretch}{1.2}
+
+\newcommand{\term}[2]{\textbf{#1}（\emph{#2}）}
+\newcommand{\important}[1]{\textcolor{mainteal}{\textbf{#1}}}
+\newcommand{\source}[1]{\par\smallskip\noindent{\small\textcolor{muted}{Source: #1}}\par}
+
+\newtcolorbox{intuitionbox}[1]{
+  breakable,
+  colback=softteal,
+  colframe=mainteal!65!black,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.7pt
+}
+
+\newtcolorbox{formulabox}[1]{
+  breakable,
+  colback=softamber,
+  colframe=orange!70!black,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.7pt
+}
+
+\newtcolorbox{warningbox}[1]{
+  breakable,
+  colback=softred,
+  colframe=red!55!black,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.7pt
+}
+
+\newtcolorbox{workflowbox}[1]{
+  breakable,
+  colback=white,
+  colframe=mainteal!55!black,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.6pt
+}
+
+\newtcolorbox{examplebox}[1]{
+  breakable,
+  colback=softamber!70!white,
+  colframe=orange!65!black,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.6pt
+}
+
+\begin{document}
+
+\frontmatter
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries 衍生工具定价复习讲义\par}
+  \vspace{0.5cm}
+  {\Large Derivatives Pricing Review Notes\par}
+  \vspace{1.2cm}
+  {\large 中文主讲 + English key terms + assignment based practice\par}
+  \vfill
+  \begin{tabular}{ll}
+    Course material & Lecture slides, syllabus, assignments, official solutions \\
+    Style & Beginner friendly, formula focused, exam oriented \\
+    Build & XeLaTeX / ctexbook \\
+  \end{tabular}
+  \vfill
+  {\large Generated from local course files under Course Material\par}
+\end{titlepage}
+
+\tableofcontents
+
+\chapter*{How To Use This Review / 怎么用这份讲义}
+\addcontentsline{toc}{chapter}{How To Use This Review / 怎么用这份讲义}
+
+这份讲义不是把课件逐页翻译，而是把所有 lecture、assignment 和 solution 读完后，按考试复习逻辑重新组织。每一章都遵循同一个顺序：
+
+\begin{enumerate}
+  \item \textbf{先讲直觉}：先回答“这个工具解决什么问题”，避免一上来就背公式。
+  \item \textbf{再讲公式}：每个公式都说明变量含义、适用条件和容易错的地方。
+  \item \textbf{再做题}：题目主要参考 assignments，assignment 1-3 用官方 solution 核对，assignment 4 根据 Lecture 12 的 binomial tree 方法推导。
+  \item \textbf{最后记英文表达}：考试题是英文时，最重要的是认出关键词，例如 forward price, hedge ratio, zero rate, swap rate, put-call parity, risk-neutral probability。
+\end{enumerate}
+
+\begin{warningbox}{学习顺序建议}
+如果你是小白，先按这个顺序复习：Futures mechanics $\rightarrow$ Hedging $\rightarrow$ Interest rates $\rightarrow$ Forward/Futures pricing $\rightarrow$ Interest rate futures $\rightarrow$ Swaps $\rightarrow$ Options $\rightarrow$ Binomial trees。不要先背 option strategy 图形，否则容易只记形状不理解现金流。
+\end{warningbox}
+
+\chapter*{Source Coverage / 材料覆盖清单}
+\addcontentsline{toc}{chapter}{Source Coverage / 材料覆盖清单}
+
+\begin{longtable}{p{0.38\textwidth}p{0.18\textwidth}p{0.34\textwidth}}
+\toprule
+\textbf{Material} & \textbf{Scale} & \textbf{Used for} \\
+\midrule
+Derivatives Pricing Lecture 1 & 59 slides & course overview, derivative definition, market participants, exchange vs OTC, basic option/forward examples \\
+Lecture 2 Futures Markets & 66 slides & futures contract mechanics, margin, clearing house, basis, hedge ratio, stock index futures hedge \\
+Lecture 3 Interest Rates part 1 & 43 slides & rate types, LIBOR/SOFR context, compounding, zero rates, bond pricing, bootstrapping \\
+Lecture 4 Interest Rates part 2 & 42 slides & forward rates, FRA payoff and valuation, duration and convexity basics \\
+Lecture 5 Forward and Futures Prices & 47 slides & no-arbitrage pricing, investment vs consumption assets, income, dividends, storage cost, convenience yield \\
+Lecture 6 Interest Rate Futures part 1 & 37 slides & day count, Treasury bond quotation, accrued interest, conversion factor, cheapest-to-deliver \\
+Lecture 7 Interest Rate Futures part 2 & 36 slides & Eurodollar futures, duration hedge, convexity adjustment intuition, China rate futures context \\
+Lecture 8 Swaps & 48 slides & plain vanilla swaps, comparative advantage, valuation as bonds or FRAs, currency swaps \\
+Lecture 9 Securitization & 10 slides & ABS, tranches, waterfall, ABS CDO loss allocation \\
+Lecture 10 Option Properties & 49 slides & option payoffs, bounds, early exercise, put-call parity \\
+Lecture 11 Trading Strategies & 37 slides & covered calls, protective puts, spreads, straddles, strips, straps, strangles \\
+Lecture 12 Binomial Trees & 34 slides & one-step and two-step binomial pricing, risk-neutral valuation, American option early exercise \\
+Supplementary Oil Futures Case & 12 slides & WTI/Brent/SC, term structure, geopolitical shock, backwardation/contango interpretation \\
+Syllabus / 教学实施方案 & 8 pages & course logistics, textbook, evaluation, reading map \\
+Assignments 1-4 & 4 files & practice question bank and final review problems \\
+Assignment 1-3 solutions & 3 PDFs & official answer checks for solved practice \\
+\bottomrule
+\end{longtable}
+
+\mainmatter
+
+\chapter{Big Picture: Derivatives Pricing / 总体框架}
+\source{Lecture 1; syllabus}
+
+\section{什么是衍生品 / What Is a Derivative}
+\term{衍生品}{derivative} 是一种金融合约，它的价值来自某个 \term{标的资产}{underlying asset}。标的可以是股票、外汇、利率、债券、商品、信用风险，甚至天气指数。课程里的核心工具包括 \term{forward}{远期}, \term{futures}{期货}, \term{swap}{互换}, \term{option}{期权}, 以及基于这些工具组合出来的结构化产品。
+
+\begin{intuitionbox}{小白直觉}
+衍生品不是“凭空赚钱”的工具，而是把未来不确定的价格、利率或现金流变成今天可以交易的合约。pricing 的核心问题是：如果市场没有免费午餐（no arbitrage），这个合约今天应该值多少钱？
+\end{intuitionbox}
+
+\section{三类使用者 / Three Types of Users}
+\begin{itemize}
+  \item \term{Hedgers}{套期保值者}：目标不是赌方向，而是减少风险。例如航空公司担心油价上涨，可以买入燃油相关 futures。
+  \item \term{Speculators}{投机者}：主动承担方向风险，希望从价格变化中获利。
+  \item \term{Arbitrageurs}{套利者}：利用价格关系错位做无风险或近似无风险交易。无套利定价的公式大多来自这个思想。
+\end{itemize}
+
+\section{Exchange vs OTC}
+{\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.15\textwidth}>{\raggedright\arraybackslash}p{0.37\textwidth}>{\raggedright\arraybackslash}p{0.37\textwidth}@{}}
+\toprule
+ & \textbf{Exchange traded} & \textbf{OTC} \\
+\midrule
+中文 & 交易所交易 & 场外交易 \\
+标准化 & 高，合约规格固定 & 低，可定制 \\
+信用风险 & 由 clearing house 降低 & 取决于 counterparty \\
+典型例子 & futures, exchange-traded options & forwards, swaps, customized options \\
+\bottomrule
+\end{tabular}
+}
+
+\section{课程主线}
+这门课的主线可以压缩为四句话：
+\begin{enumerate}
+  \item Forward/Futures pricing 用 \important{cash-and-carry arbitrage} 建立现货和远期价格的关系。
+  \item Interest rate 部分提供 discounting, zero curve, forward rate, duration 等定价基础。
+  \item Swaps 可以拆成债券组合或 FRA 组合。
+  \item Options 不能只用线性复制，必须处理非线性 payoff；put-call parity 和 binomial trees 是入门核心。
+\end{enumerate}
+
+\chapter{Futures Markets and Hedging / 期货市场与套期保值}
+\source{Lecture 2; Assignment 1}
+
+\section{Futures Contract Mechanics}
+\term{Futures contract}{期货合约} 是交易所标准化合约。合约会规定：
+\begin{itemize}
+  \item underlying asset：交割什么资产；
+  \item contract size：一张合约对应多少数量；
+  \item delivery month/place：何时何地交割；
+  \item price quotation：价格如何报价；
+  \item daily settlement：每天按结算价把盈亏打进 margin account。
+\end{itemize}
+
+\begin{intuitionbox}{为什么 futures 要 daily settlement}
+Forward 的盈亏通常到期一次性结算；futures 每天结算。这样 clearing house 可以把信用风险切成每天的小块。如果价格朝你不利方向变动，margin account 下降到 maintenance margin 以下，就会触发 margin call。
+\end{intuitionbox}
+
+\section{Margin Account / 保证金}
+\begin{itemize}
+  \item \term{Initial margin}{初始保证金}：开仓时先放进去的钱。
+  \item \term{Maintenance margin}{维持保证金}：账户余额不能低于这个数。
+  \item \term{Margin call}{追加保证金通知}：余额低于 maintenance margin 时，要补回 initial margin。
+\end{itemize}
+
+\begin{formulabox}{Margin call threshold}
+对于 long futures：
+\[
+\text{margin balance}=\text{initial margin}+(\Delta F)\times \text{contract size}\times N.
+\]
+如果价格下降导致 balance $<$ maintenance margin，就会 margin call。对于 short futures，价格上涨导致亏损。
+\end{formulabox}
+
+\section{Basis and Convergence}
+\term{Basis}{基差} 通常定义为
+\[
+\text{basis}=S-F,
+\]
+其中 $S$ 是 spot price，$F$ 是 futures price。到交割期附近，futures price 和 spot price 必须收敛，否则会出现交割套利。Lecture 2 的 convergence 图就是在说明这一点。
+
+\section{Hedging with Futures}
+最小方差套保比率：
+\[
+h^\ast=\rho\frac{\sigma_S}{\sigma_F}.
+\]
+这里 $\rho$ 是现货价格变化与期货价格变化的相关系数，$\sigma_S$ 是被套保资产价格变化标准差，$\sigma_F$ 是期货价格变化标准差。
+
+要交易的合约数量：
+\[
+N^\ast=\frac{h^\ast Q_A}{Q_F},
+\]
+其中 $Q_A$ 是需要套保的现货数量，$Q_F$ 是一张 futures contract 的数量。
+
+\begin{warningbox}{常见错误}
+很多人会把 hedge ratio 的方向和合约数量混在一起。先判断方向：担心价格上涨就需要 long futures，担心价格下跌就需要 short futures；再用 $N^\ast$ 算张数。
+\end{warningbox}
+
+\section{Changing Portfolio Beta}
+用 stock index futures 改变组合 beta：
+\[
+N^\ast=(\beta_T-\beta_P)\frac{V_A}{F_0\times \text{multiplier}}.
+\]
+如果 $N^\ast>0$，买入 futures；如果 $N^\ast<0$，卖出 futures。
+
+\chapter{Interest Rates / 利率、零息利率与远期利率}
+\source{Lecture 3; Lecture 4; Assignment 1}
+
+\section{Interest Rate Is a Price of Time}
+利率是时间的价格。今天的 1 元和一年后的 1 元不一样，因为今天的钱可以投资。衍生品定价中最常用的是 \term{risk-free rate}{无风险利率}，它用来 discount 确定性现金流。
+
+\section{Compounding / 复利方式}
+如果年利率为 $R$，每年复利 $m$ 次，$T$ 年后的金额为
+\[
+A=P\left(1+\frac{R}{m}\right)^{mT}.
+\]
+连续复利（continuous compounding）为
+\[
+A=Pe^{RT}.
+\]
+
+离散复利和连续复利转换：
+\[
+R_c=m\ln\left(1+\frac{R_m}{m}\right),\qquad
+R_m=m\left(e^{R_c/m}-1\right).
+\]
+
+\begin{intuitionbox}{为什么课程喜欢 continuous compounding}
+连续复利让很多公式变短。例如 discount factor 是 $e^{-rT}$，forward price 是 $S_0e^{rT}$。考试给出 continuously compounded rate 时，通常就是暗示你用指数形式。
+\end{intuitionbox}
+
+\section{Zero Rate and Discount Factor}
+\term{Zero rate}{零息利率} 是从今天到某个期限的一次性投资收益率。若 $R(T)$ 是连续复利 zero rate，discount factor 为
+\[
+P(0,T)=e^{-R(T)T}.
+\]
+有现金流 $C_i$ 在 $t_i$ 支付，则价格为
+\[
+\text{Price}=\sum_i C_iP(0,t_i).
+\]
+
+\section{Bootstrapping Zero Curve}
+Bootstrapping 是用短期限债券价格一步一步推出更长期 zero rates。思路如下：
+\begin{enumerate}
+  \item 先用最短期 zero-coupon bond 直接得到第一个 discount factor。
+  \item 再用有 coupon 的债券价格，扣掉已经知道的早期 coupon 现值。
+  \item 剩下的部分对应最后一期 principal + coupon，由此解出新的 discount factor。
+\end{enumerate}
+
+\section{Forward Rate / 远期利率}
+如果 $R_1$ 是到 $T_1$ 的 zero rate，$R_2$ 是到 $T_2$ 的 zero rate，均为连续复利，则 $T_1$ 到 $T_2$ 的 forward rate 为
+\[
+R_F=\frac{R_2T_2-R_1T_1}{T_2-T_1}.
+\]
+
+\begin{intuitionbox}{Forward rate 的直觉}
+把钱从 0 存到 $T_2$，应该等价于先从 0 存到 $T_1$，再从 $T_1$ 存到 $T_2$。否则就可以借短贷长或借长贷短做套利。
+\end{intuitionbox}
+
+\section{Forward Rate Agreement / FRA}
+\term{FRA}{forward rate agreement} 是约定未来某段借贷期适用利率的合约。若约定利率为 $R_K$，未来市场利率为 $R_M$，本金 $L$，借贷期长度为 $\tau=T_2-T_1$，则在 $T_2$ 的利差现金流近似为
+\[
+L(R_K-R_M)\tau
+\]
+或相反方向，取决于是 lender 还是 borrower。市场惯例通常在 $T_1$ 结算，所以要从 $T_2$ 折现回 $T_1$。
+
+\section{Duration / 久期}
+\term{Duration}{久期} 衡量债券价格对收益率变化的敏感性。Modified duration 近似关系：
+\[
+\frac{\Delta B}{B}\approx-D\Delta y.
+\]
+Lecture 6-7 在利率期货套保里使用 duration matching：
+\[
+N^\ast=\frac{P D_P}{F D_F}.
+\]
+
+\chapter{Forward and Futures Pricing / 远期与期货定价}
+\source{Lecture 5; Assignment 2; supplementary oil futures case}
+
+\section{No Arbitrage Pricing}
+无套利定价的基本句式是：构造两个未来现金流完全一样的组合，它们今天价格必须一样。Forward/Futures pricing 最常见的复制组合是：
+\begin{itemize}
+  \item 买入现货并融资持有到期；
+  \item 或签订 forward 到期买入资产。
+\end{itemize}
+
+\section{Investment Asset with No Income}
+对于不支付收益、无 storage cost 的 investment asset：
+\[
+F_0=S_0e^{rT}.
+\]
+如果 $F_0>S_0e^{rT}$，做 cash-and-carry：借钱买现货，同时 short forward。若 $F_0<S_0e^{rT}$，做 reverse cash-and-carry：short spot，把钱投资，同时 long forward。
+
+\section{Known Cash Income}
+如果持有资产期间有确定现金收益，其现值为 $I$：
+\[
+F_0=(S_0-I)e^{rT}.
+\]
+收益降低 forward price，因为买现货的人在持有期会收到这部分收益。
+
+\section{Known Dividend Yield}
+如果资产提供连续收益率 $q$：
+\[
+F_0=S_0e^{(r-q)T}.
+\]
+Stock index futures 常用这个公式，其中 $q$ 是 dividend yield。
+
+\section{Foreign Currency}
+外汇可以看作支付 foreign risk-free rate $r_f$ 的资产：
+\[
+F_0=S_0e^{(r_d-r_f)T}.
+\]
+$r_d$ 是 domestic interest rate，$r_f$ 是 foreign interest rate。
+
+\section{Commodity Futures: Storage Cost and Convenience Yield}
+商品分为 \term{investment assets}{投资资产} 和 \term{consumption assets}{消费资产}。黄金更像 investment asset，原油、小麦等更像 consumption asset。若 storage cost 的现值为 $U$，无 convenience yield 时：
+\[
+F_0=(S_0+U)e^{rT}.
+\]
+若用连续 storage cost rate $u$ 和 convenience yield $y$：
+\[
+F_0=S_0e^{(r+u-y)T}.
+\]
+
+\begin{intuitionbox}{Convenience yield 的直觉}
+持有实物商品有时有额外好处，例如炼油厂持有原油可以保证生产不断。这个“持有实物的便利”会让现货更有价值，因此降低 futures price，相当于公式里的 $-y$。
+\end{intuitionbox}
+
+\section{Contango and Backwardation}
+\begin{itemize}
+  \item \term{Contango}{正向市场}：远期价格高于近月价格，常见原因是 financing/storage cost 较高。
+  \item \term{Backwardation}{反向市场}：近月价格高于远期价格，常见原因是短期供给紧张、convenience yield 高。
+\end{itemize}
+补充油价课件用 WTI、Brent、SC 的 futures curve 说明：地缘冲击会先影响近月合约，因为市场最担心的是即时供给和运输瓶颈，而不是很远未来的均衡价格。
+
+\chapter{Interest Rate Futures / 利率期货}
+\source{Lecture 6; Lecture 7; Assignment 2}
+
+\section{Day Count Convention}
+\term{Day count convention}{日计数惯例} 决定利息如何按天累计。
+\begin{itemize}
+  \item Treasury bonds: often Actual/Actual。
+  \item Corporate bonds: often 30/360。
+  \item Money market instruments: often Actual/360。
+\end{itemize}
+题目里如果给出 quoted price、coupon date、settlement date，必须先判断 accrued interest。
+
+\section{Treasury Bond Quotation}
+美国 Treasury bond 常用 32 分之一报价。例如 102-07 表示
+\[
+102+\frac{7}{32}=102.21875.
+\]
+\term{Cash price}{现金价格} 等于 quoted price 加 accrued interest：
+\[
+\text{Cash price}=\text{Quoted price}+\text{Accrued interest}.
+\]
+
+\section{Conversion Factor and Cheapest-to-Deliver}
+Treasury bond futures 允许交割多种债券。为了公平，每只债券有 \term{conversion factor}{转换因子}。交割时收到：
+\[
+\text{Cash received}=\text{Futures price}\times \text{conversion factor}+\text{accrued interest}.
+\]
+卖方会选择 \term{cheapest-to-deliver}{最便宜可交割债券}，即交割成本最低的债券。
+
+\section{Eurodollar Futures}
+Eurodollar futures 的报价：
+\[
+Q=100-R,
+\]
+其中 $R$ 是三个月 LIBOR 的年化百分比。若 quote 为 98.40，则 implied rate 为 $1.60\%$。
+
+\begin{warningbox}{Eurodollar hedge direction}
+借款人担心未来利率上升。利率上升会使 Eurodollar futures price 下降，所以借款人应该 short Eurodollar futures，价格下跌时 futures 盈利可以抵消借款成本上升。
+\end{warningbox}
+
+\section{Duration Based Hedge}
+债券组合用 Treasury bond futures 免疫利率风险：
+\[
+N^\ast=\frac{P D_P}{F D_F}.
+\]
+这里 $P$ 是组合价值，$D_P$ 是组合 duration，$F$ 是 futures contract 对应的交割价值，$D_F$ 是 CTD bond duration。若担心利率上升导致债券价格下降，通常 short futures。
+
+\chapter{Swaps / 互换}
+\source{Lecture 8; Assignment 3}
+
+\section{Plain Vanilla Interest Rate Swap}
+\term{Plain vanilla interest rate swap}{普通利率互换} 是一方支付固定利率、收取浮动利率；另一方相反。本金通常不交换，只用 notional principal 计算利息。
+
+\begin{intuitionbox}{Swap 的直觉}
+Swap 可以看成一串 FRA，也可以看成一只 fixed-rate bond 和一只 floating-rate bond 的组合。哪个角度更方便，取决于题目给了 swap rate 还是 zero curve。
+\end{intuitionbox}
+
+\section{Using Swaps to Transform Liabilities}
+如果公司本来借的是 floating rate loan，又进入 swap 支付 fixed、收 LIBOR，那么：
+\[
+\text{floating loan payment}+\text{swap net payment}
+\]
+可以合成 fixed rate liability。反过来，fixed loan 加 receive fixed/pay floating swap 可以合成 floating liability。
+
+\section{Comparative Advantage}
+比较优势题的套路：
+\begin{enumerate}
+  \item 分别比较两家公司在 fixed market 和 floating market 的借款差距。
+  \item 差距更大的市场是有比较优势的市场。
+  \item 总潜在收益等于两个市场差距之差。
+  \item 通过 swap 和金融中介分配收益。
+\end{enumerate}
+
+\section{Swap Valuation as Bonds}
+对“pay fixed, receive floating”的一方：
+\[
+V_{\text{swap}}=B_{\text{floating}}-B_{\text{fixed}}.
+\]
+对“receive fixed, pay floating”的一方，符号相反。
+
+\section{Swap Rate and Zero Curve}
+Par swap rate 是让 swap 初始价值为 0 的 fixed rate。若支付频率为一年一次，notional 为 100，则 $n$ 年 par swap 可视为 coupon bond at par：
+\[
+100=\sum_{i=1}^{n-1}\frac{R_{\text{swap}}\times100}{(1+R_i)^i}
+\,+\,\frac{100+R_{\text{swap}}\times100}{(1+R_n)^n}.
+\]
+Assignment 3 第 1 题就是用 2 年和 3 年 swap rate bootstrapping 2 年、3 年 LIBOR zero rates。
+
+\chapter{Securitization / 证券化}
+\source{Lecture 9; Assignment 3}
+
+\section{Basic Structure}
+\term{Securitization}{证券化} 把一组资产的现金流打包给 SPV，再由 SPV 发行不同层级的证券。典型结构：
+\[
+\text{Loans/Mortgages}\rightarrow \text{SPV}\rightarrow \text{Senior, Mezzanine, Equity tranches}.
+\]
+
+\section{Waterfall}
+\term{Waterfall}{瀑布结构} 决定现金流和损失如何分配。通常收益先给 senior，再给 mezzanine，最后给 equity；损失反过来，equity first loss，之后 mezzanine，再之后 senior。
+
+\begin{intuitionbox}{为什么 senior tranche 也可能有风险}
+Senior tranche 不是没有风险，而是只有在低层级已经被打穿后才开始亏损。ABS CDO 的危险在于它把很多 ABS mezzanine tranches 再打包，底层相关性一上升，原本看起来分散的 mezzanine 风险会集中冲击 CDO senior tranche。
+\end{intuitionbox}
+
+\chapter{Option Properties / 期权性质}
+\source{Lecture 10; Assignment 1; Assignment 3}
+
+\section{Call and Put}
+\begin{itemize}
+  \item \term{Call option}{看涨期权}：持有人有权买入标的。
+  \item \term{Put option}{看跌期权}：持有人有权卖出标的。
+  \item \term{European option}{欧式期权}：只能到期行权。
+  \item \term{American option}{美式期权}：到期前任意时间可行权。
+\end{itemize}
+
+\section{Payoff and Profit}
+Long call payoff:
+\[
+\max(S_T-K,0).
+\]
+Long put payoff:
+\[
+\max(K-S_T,0).
+\]
+Profit = payoff - premium accumulated to maturity. 在很多 assignment solution 中，为了简单忽略 time value of money，直接用 payoff - premium。
+
+\section{Bounds}
+不支付股利股票的 European call 下界：
+\[
+c\geq S_0-Ke^{-rT}.
+\]
+European put 下界：
+\[
+p\geq Ke^{-rT}-S_0.
+\]
+同时 $c\leq S_0$，$p\leq Ke^{-rT}$。
+
+\section{Put-Call Parity}
+无股利 European options：
+\[
+c+Ke^{-rT}=p+S_0.
+\]
+有确定股利现值 $D$：
+\[
+c+D+Ke^{-rT}=p+S_0.
+\]
+
+\begin{intuitionbox}{Parity 的直觉}
+左边“call + bond + dividend cash reserve”和右边“put + stock”到期现金流一样。到期如果 $S_T>K$，两边都等于 $S_T$；如果 $S_T<K$，两边都等于 $K$。今天价格不同就有 arbitrage。
+\end{intuitionbox}
+
+\section{Early Exercise}
+对于不支付股利的股票，American call 通常不应提前行权。原因是行权要提前支付 strike，损失利息，而且仍然没有获得额外股利。American put 可能提前行权，尤其是 deep in the money 时，因为提前拿到 $K$ 可以赚利息。
+
+\chapter{Trading Strategies / 期权交易策略}
+\source{Lecture 11; Assignment 3}
+
+\section{Covered Call and Protective Put}
+\term{Covered call}{备兑看涨}：long stock + short call。它牺牲上涨空间，换取 premium income。
+
+\term{Protective put}{保护性看跌}：long stock + long put。它像给股票买保险，锁定最低卖出价值。
+
+Put-call parity 可以写成：
+\[
+S_0+p=c+Ke^{-rT}.
+\]
+这说明 protective put 的经济效果等价于 fiduciary call（call + risk-free bond）。
+
+\section{Spreads}
+\begin{itemize}
+  \item \term{Bull spread}{牛市价差}：押温和上涨，收益和亏损都有限。
+  \item \term{Bear spread}{熊市价差}：押温和下跌。
+  \item \term{Butterfly spread}{蝶式价差}：押价格停留在中间 strike 附近。
+  \item \term{Calendar spread}{日历价差}：同 strike 不同 maturity。
+\end{itemize}
+
+\section{Combinations}
+\begin{itemize}
+  \item \term{Straddle}{跨式组合}：同 strike 同 maturity 的 long call + long put，押大波动。
+  \item \term{Strip}{条式组合}：one call + two puts，押大波动且更偏向下跌。
+  \item \term{Strap}{带式组合}：two calls + one put，押大波动且更偏向上涨。
+  \item \term{Strangle}{宽跨式组合}：不同 strike 的 out-of-the-money call 和 put，成本更低但需要更大波动。
+\end{itemize}
+
+\chapter{Binomial Trees / 二叉树定价}
+\source{Lecture 12; Assignment 4}
+
+\section{One-Step Binomial Model}
+假设股票现在为 $S_0$，一个 period 后只可能上涨到 $S_0u$ 或下跌到 $S_0d$。衍生品 payoff 分别为 $f_u$ 和 $f_d$。
+
+复制组合 long $\Delta$ shares and short one derivative，使组合无风险：
+\[
+S_0u\Delta-f_u=S_0d\Delta-f_d.
+\]
+因此
+\[
+\Delta=\frac{f_u-f_d}{S_0u-S_0d}.
+\]
+
+\section{Risk-Neutral Valuation}
+更常用的写法是 risk-neutral probability：
+\[
+p=\frac{e^{r\Delta t}-d}{u-d}.
+\]
+衍生品价值：
+\[
+f=e^{-r\Delta t}\left[pf_u+(1-p)f_d\right].
+\]
+
+\begin{warningbox}{Risk-neutral probability 不是真实概率}
+$p$ 不是股票真实上涨概率，而是让 discounted stock price 成为 martingale 的定价权重。考试里不要解释成“市场认为上涨概率是 $p$”。
+\end{warningbox}
+
+\section{Two-Step Tree}
+两步树可以从终点向前 backward induction：
+\[
+f_{\text{node}}=e^{-r\Delta t}\left[p f_{\text{up}}+(1-p)f_{\text{down}}\right].
+\]
+如果是 American option，每个节点还要比较 continuation value 和 immediate exercise value：
+\[
+f_{\text{American put}}=\max\left(K-S,\; e^{-r\Delta t}[pf_u+(1-p)f_d]\right).
+\]
+
+\input{detailed-notes.tex}
+
+\chapter{Formula Sheet / 公式速查}
+\begin{longtable}{p{0.28\textwidth}p{0.32\textwidth}p{0.32\textwidth}}
+\toprule
+\textbf{Topic} & \textbf{Formula} & \textbf{Use} \\
+\midrule
+Continuous compounding & $A=Pe^{RT}$ & discounting and future value \\
+Discrete to continuous & $R_c=m\ln(1+R_m/m)$ & rate conversion \\
+Forward rate & $R_F=(R_2T_2-R_1T_1)/(T_2-T_1)$ & implied future rate \\
+No income forward & $F_0=S_0e^{rT}$ & investment asset with no income \\
+Known income forward & $F_0=(S_0-I)e^{rT}$ & stock/bond with known cash income \\
+Dividend yield & $F_0=S_0e^{(r-q)T}$ & index futures \\
+Currency forward & $F_0=S_0e^{(r_d-r_f)T}$ & FX forward \\
+Storage cost & $F_0=(S_0+U)e^{rT}$ & commodity upper bound \\
+Convenience yield & $F_0=S_0e^{(r+u-y)T}$ & commodity futures \\
+Minimum variance hedge & $h^\ast=\rho\sigma_S/\sigma_F$ & cross hedge \\
+Stock index hedge & $N^\ast=(\beta_T-\beta_P)V_A/(F_0M)$ & beta adjustment \\
+Duration hedge & $N^\ast=PD_P/(FD_F)$ & bond portfolio hedge \\
+Put-call parity & $c+D+Ke^{-rT}=p+S_0$ & European option arbitrage \\
+Binomial probability & $p=(e^{r\Delta t}-d)/(u-d)$ & risk-neutral pricing \\
+Binomial value & $f=e^{-r\Delta t}[pf_u+(1-p)f_d]$ & option/tree valuation \\
+\bottomrule
+\end{longtable}
+
+\chapter{High-Frequency Practice Questions / 高频重要题}
+
+\section{Assignment 1 Q1: Short Forward on GBP}
+\textbf{Question.} An investor enters into a short forward contract to sell 100,000 British pounds at 1.4000 USD/GBP. Gain or loss if final exchange rate is 1.3800 or 1.4300?
+
+\textbf{Solution.} Short forward means you must sell GBP at 1.4000. If market is 1.3800, selling at 1.4000 is better:
+\[
+(1.4000-1.3800)\times100000=2000.
+\]
+Gain = \$2,000. If market is 1.4300, selling at 1.4000 is worse:
+\[
+(1.4300-1.4000)\times100000=3000.
+\]
+Loss = \$3,000.
+
+\section{Assignment 1 Q3: Margin Call}
+\textbf{Question.} A trader buys two July futures contracts on frozen orange juice. Each contract is 15,000 pounds. Current futures price is 200 cents/lb, initial margin \$8,000 per contract, maintenance margin \$6,000 per contract. What price change leads to margin call? When can \$3,000 be withdrawn?
+
+\textbf{Solution.} Total initial margin $=16000$, total maintenance margin $=12000$. Loss that triggers margin call is \$4,000. Two contracts cover $30000$ pounds, so price fall:
+\[
+\frac{4000}{30000}=0.1333\text{ dollars}=13.33\text{ cents}.
+\]
+Margin call when price falls to $200-13.33=186.67$ cents/lb. To withdraw \$3,000, account must rise to \$19,000, so gain is \$3,000:
+\[
+\frac{3000}{30000}=10\text{ cents}.
+\]
+Price must rise to 210 cents/lb.
+
+\section{Assignment 1 Q6: Cross Hedge}
+\textbf{Question.} A company loses \$1 million for each 1 cent/gallon increase in a new fuel. Correlation with gasoline futures price changes is 0.8. New fuel standard deviation is 50\% greater than gasoline futures. Contract size is 40,000 gallons.
+
+\textbf{Solution.} Minimum variance hedge ratio:
+\[
+h^\ast=0.8\times1.5=1.2.
+\]
+Exposure measured in gallons:
+\[
+\frac{1000000}{0.01}=100000000\text{ gallons}.
+\]
+Because the company loses when fuel price rises, it should gain when gasoline futures rises, so take a long futures position:
+\[
+1.2\times100000000=120000000\text{ gallons}.
+\]
+Number of contracts:
+\[
+\frac{120000000}{40000}=3000.
+\]
+
+\section{Assignment 1 Q7: Changing Beta}
+Portfolio value is \$100 million, beta is 1.4, index is 2,000, multiplier is \$250.
+
+\textbf{To reduce beta to 0.5:}
+\[
+N=(0.5-1.4)\frac{100000000}{2000\times250}=-180.
+\]
+Short 180 futures contracts.
+
+\textbf{To increase beta to 1.8:}
+\[
+N=(1.8-1.4)\frac{100000000}{2000\times250}=80.
+\]
+Long 80 futures contracts.
+
+\section{Assignment 2 Q1: Forward Price with Dividends}
+Stock price $S_0=100$, dividends \$1 in 2 months and 5 months, $r=8\%$, $T=0.5$.
+
+Present value of dividends:
+\[
+I=e^{-0.08(2/12)}+e^{-0.08(5/12)}=1.9540.
+\]
+Forward price:
+\[
+F_0=(100-1.9540)e^{0.08(0.5)}=102.05.
+\]
+Initial value of the forward is zero.
+
+Three months later, $S=48$, one dividend remains in 2 months:
+\[
+I=e^{-0.08(2/12)}=0.9868.
+\]
+The short forward value is
+\[
+f_{\text{short}}=-\left(S-I-Ke^{-rT}\right)=51.05.
+\]
+New 3-month forward price:
+\[
+F=(48-0.9868)e^{0.08(3/12)}=47.96.
+\]
+
+\section{Assignment 2 Q2: Stock Index Futures}
+If $S_0=1200$, $r=9\%$, average dividend yield $q=3.4\%$, and $T=153/365$:
+\[
+F_0=1200e^{(0.09-0.034)(153/365)}\approx1228.5.
+\]
+
+\section{Assignment 2 Q3: Currency Forward}
+Given $S_0=1.4500$, $F_0=1.3950$, USD rate $r_d=1\%$, $T=0.5$:
+\[
+1.3950=1.4500e^{(0.01-r_f)0.5}.
+\]
+So
+\[
+r_f=0.01-\frac{\ln(1.3950/1.4500)}{0.5}\approx8.73\%.
+\]
+
+\section{Assignment 2 Q4-Q5: Commodity Futures}
+Oil: $S_0=80$, storage cost \$3 paid at the end of one year, $r=5\%$:
+\[
+F_0\leq80e^{0.05}+3=87.10.
+\]
+It is an upper bound because oil is a consumption asset and convenience yield may reduce futures price.
+
+Silver: $S_0=15$, storage \$0.24 per year paid quarterly in advance, $T=0.75$, $r=10\%$:
+\[
+U=0.06+0.06e^{-0.10(0.25)}+0.06e^{-0.10(0.5)}=0.1756.
+\]
+\[
+F_0=(15+0.1756)e^{0.10(0.75)}\approx16.36.
+\]
+
+\section{Assignment 2 Q8: Eurodollar Futures Hedge}
+December Eurodollar futures quote is 98.40, so implied LIBOR is $100-98.40=1.60\%$. Borrowing at LIBOR + 0.5\% locks in about $2.10\%$.
+
+A borrower should short Eurodollar futures. If actual 3-month rate is 1.3\%, final settlement price is
+\[
+100-1.3=98.70.
+\]
+
+\section{Assignment 3 Q1: Swap Rates to Zero Rates}
+One-year LIBOR zero rate is 10\% annually compounded. Two-year swap rate is 11\%. Treat the par swap as a par coupon bond:
+\[
+\frac{11}{1.10}+\frac{111}{(1+R_2)^2}=100.
+\]
+Thus $R_2=11.05\%$.
+
+For the 3-year swap rate 12\%:
+\[
+\frac{12}{1.10}+\frac{12}{(1.1105)^2}+\frac{112}{(1+R_3)^3}=100.
+\]
+Thus $R_3=12.17\%$.
+
+\section{Assignment 3 Q5: ABS CDO Loss Waterfall}
+Mortgage portfolio loss is 16\%. ABS has equity 5\%, mezzanine 20\%, senior 75\%.
+
+ABS losses:
+\begin{itemize}
+  \item Equity tranche: 100\%.
+  \item Mezzanine tranche: $(16-5)/20=55\%$.
+  \item Senior tranche: 0\%.
+\end{itemize}
+
+ABS CDO is created from mezzanine tranches, so its collateral loss is 55\%. With CDO equity 5\%, mezzanine 20\%, senior 75\%:
+\begin{itemize}
+  \item CDO equity: 100\%.
+  \item CDO mezzanine: 100\%.
+  \item CDO senior: $(55-25)/75=40\%$.
+\end{itemize}
+
+\section{Assignment 3 Q6-Q7: Option Profit Conditions}
+Long European put: premium \$3, strike \$40. Exercise if $S_T<40$. Profit if
+\[
+40-S_T-3>0 \Rightarrow S_T<37.
+\]
+
+Short European call: premium \$4, strike \$50. The option holder exercises if $S_T>50$. Seller profit is
+\[
+4-\max(S_T-50,0).
+\]
+Seller profits if $S_T<54$.
+
+\section{Assignment 3 Q8: Put-Call Parity Arbitrage}
+Call and put both cost \$3, $K=20$, $T=0.25$, $r=10\%$, $S_0=19$, dividend \$1 in one month.
+
+Parity says
+\[
+c+D+Ke^{-rT}=p+S_0.
+\]
+Left side:
+\[
+3+e^{-0.10/12}+20e^{-0.10(0.25)}\approx23.50.
+\]
+Right side:
+\[
+3+19=22.
+\]
+Left side is overpriced. Arbitrage: sell call, borrow present value of strike, buy put and stock. The future stock/dividend cash flows repay the synthetic obligations and lock in the mispricing.
+
+\section{Assignment 3 Q9-Q10: Butterfly Spread}
+Put prices for strikes 55, 60, 65 are 4, 6, 9. Buy one 55 put, buy one 65 put, sell two 60 puts. Initial cost:
+\[
+4+9-2(6)=1.
+\]
+Net profit is:
+\[
+\begin{cases}
+-1, & S_T\leq55,\\
+S_T-56, & 55<S_T\leq60,\\
+64-S_T, & 60<S_T\leq65,\\
+-1, & S_T>65.
+\end{cases}
+\]
+Loss occurs when $S_T<56$ or $S_T>64$. Put-call parity shows the cost is identical to the same butterfly built with calls because the bond and stock terms cancel when combining strikes symmetrically.
+
+\section{Assignment 4 Q1-Q2: Two-Step Binomial Tree}
+This assignment has no official solution PDF in the materials. The following is a non-official solution derived from Lecture 12.
+
+Given $S_0=50$, $u=1.06$, $d=0.95$, $\Delta t=0.25$, $r=5\%$, $K=51$:
+\[
+p=\frac{e^{0.05(0.25)}-0.95}{1.06-0.95}=0.568895.
+\]
+Terminal stock prices:
+\[
+S_{uu}=56.18,\qquad S_{ud}=50.35,\qquad S_{dd}=45.125.
+\]
+Call payoffs:
+\[
+5.18,\quad0,\quad0.
+\]
+European call value:
+\[
+c=e^{-0.05(0.5)}\left[p^2(5.18)\right]\approx1.64.
+\]
+
+Put payoffs:
+\[
+0,\quad0.65,\quad5.875.
+\]
+European put:
+\[
+p_{\text{put}}\approx1.38.
+\]
+Put-call parity check:
+\[
+c+Ke^{-0.05(0.5)}=1.635+49.741\approx51.376,
+\]
+\[
+p+S_0=1.376+50=51.376.
+\]
+For American put, compare continuation and early exercise. At the down node, immediate exercise is $51-47.5=3.5$, continuation value is about 2.87, so early exercise is optimal there. American put value is about 1.65.
+
+\section{\texorpdfstring{Assignment 4 Q3: One-Step Derivative Paying $S_T^2$}{Assignment 4 Q3: One-Step Derivative Paying ST squared}}
+This problem uses $S_0=25$, $S_u=27$, $S_d=23$, $r=10\%$, $T=2/12$. Here $u=27/25$, $d=23/25$:
+\[
+p=\frac{e^{0.10(2/12)}-23/25}{27/25-23/25}=0.60504.
+\]
+Payoff is $S_T^2$, so
+\[
+f_u=27^2=729,\qquad f_d=23^2=529.
+\]
+Value:
+\[
+f=e^{-0.10(2/12)}\left[0.60504(729)+(1-0.60504)(529)\right]\approx639.26.
+\]
+
+\backmatter
+\chapter*{Final Exam Checklist / 考前检查}
+\addcontentsline{toc}{chapter}{Final Exam Checklist / 考前检查}
+\begin{multicols}{2}
+\begin{itemize}
+  \item Can you explain no-arbitrage without memorizing?
+  \item Can you convert continuous and semiannual rates?
+  \item Can you bootstrap a zero rate from bond/swap prices?
+  \item Can you price a forward with income, dividend yield, storage cost, or FX yield?
+  \item Can you choose long vs short futures for a hedge?
+  \item Can you calculate margin call price levels?
+  \item Can you compute stock index beta hedge contracts?
+  \item Can you compute Eurodollar implied rate from quote?
+  \item Can you value a swap as fixed bond vs floating bond?
+  \item Can you allocate losses through ABS/CDO tranches?
+  \item Can you write put-call parity with dividends?
+  \item Can you draw and interpret option strategy payoffs?
+  \item Can you run a binomial tree backward?
+  \item Can you decide American put early exercise?
+\end{itemize}
+\end{multicols}
+
+\end{document}

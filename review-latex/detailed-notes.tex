@@ -1,0 +1,452 @@
+\chapter{Detailed Beginner Notes / 逐章超详细讲义}
+
+这一章是对前面主题章的加厚版。前面章节适合快速复习公式；本章适合从零理解。每一节都按“直觉 - 现金流 - 公式 - 题目入口 - 常见坑”的顺序写。读的时候不要急着背结论，先把每个产品的 long side 和 short side 现金流画出来。
+
+\section{Foundations / 衍生品基础}
+
+\subsection{Derivative 是一张未来现金流规则}
+\term{Derivative}{衍生品} 的价值来自 \term{underlying asset}{标的资产}。这句话的意思不是“衍生品价格一定跟标的价格同步涨跌”，而是说衍生品合约规定了未来某些状态下的现金流，而这些状态通常由标的资产价格、利率、汇率或信用事件决定。
+
+例如，一份 call option 给买方未来按 strike price 买入股票的权利。它不是股票本身，但它的 payoff 由未来股票价格 $S_T$ 决定。一份 interest rate swap 也不是债券本身，但它的现金流由未来 floating reference rate 决定。只要你能写出未来 cash flows，就能开始讨论 pricing。
+
+\begin{workflowbox}{小白解题第一步}
+\begin{enumerate}
+  \item 圈出 underlying asset：股票、汇率、利率、商品还是信用资产。
+  \item 圈出 position：long, short, buy, sell, receive, pay。
+  \item 写出 future cash inflow 和 cash outflow。
+  \item 看能不能用更简单的资产组合复制这些现金流。
+\end{enumerate}
+\end{workflowbox}
+
+\subsection{No-arbitrage 不是预测，而是相对定价}
+这门课的 pricing 不是预测未来价格。No-arbitrage pricing 的逻辑是：如果两个 portfolios 在未来每一种状态下现金流都一样，那么它们今天的价格必须一样。否则可以买便宜的一边、卖贵的一边，锁定 profit。
+
+这就是 forward pricing, put-call parity, swap valuation, binomial tree 的共同核心。公式虽然不同，但背后的句式很像：
+\begin{quote}
+Portfolio A and Portfolio B have identical future cash flows. Therefore, their current values must be equal under no arbitrage.
+\end{quote}
+
+\subsection{Hedger, speculator, arbitrageur 的区别}
+\term{Hedger}{套保者} 已经有一个风险，使用 derivatives 是为了 reduce risk。例如航空公司未来要买 fuel，怕 fuel price rises，所以 long futures。农场主未来要卖 corn，怕 corn price falls，所以 short futures。
+
+\term{Speculator}{投机者} 本来没有必须对冲的风险，而是主动承担价格方向风险。看涨就 long， 看跌就 short。Speculation 常用 derivatives 是因为 leverage 高，不需要付出全部 underlying notional。
+
+\term{Arbitrageur}{套利者} 关注 price relation 是否错位。例如 forward price 高于 cost-of-carry value，就可以 cash-and-carry；put-call parity 左边贵，就 short 左边、long 右边。
+
+\begin{warningbox}{基础章最常见误区}
+不要把 hedging 写成 eliminate all risk。更准确是 reduce or manage risk，因为 hedge 仍然可能有 basis risk, maturity mismatch, quantity mismatch, liquidity risk。
+\end{warningbox}
+
+\section{Futures Markets and Hedging / 期货与套保}
+
+\subsection{Futures 为什么要 daily settlement}
+Futures 和 forward 都是在未来按约定价格交易 underlying asset，但 futures 是 exchange traded and standardized，最重要机制是 \term{daily settlement}{每日结算}。每天交易所根据 settlement price 计算当天 gains and losses，并把钱划入或划出 margin account。
+
+\term{Initial margin}{初始保证金} 是开仓时放入账户的钱，不是 purchase price。Futures 合约本身初始价值通常为零。保证金是 performance bond，用来保证你能承担未来 daily losses。\term{Maintenance margin}{维持保证金} 是最低余额；低于这个水平时触发 \term{margin call}{追加保证金}。
+
+\begin{workflowbox}{Margin call 题步骤}
+\begin{enumerate}
+  \item 计算 total initial margin 和 total maintenance margin。
+  \item 两者差额就是触发 margin call 前最多可亏的金额。
+  \item 用亏损金额除以 total contract units，得到 price change。
+  \item Long futures 怕 price falls；short futures 怕 price rises。
+  \item 如果问可 withdraw 多少，账户必须高于 initial margin 对应金额。
+\end{enumerate}
+\end{workflowbox}
+
+\begin{examplebox}{Assignment 1 Q3}
+Long 2 张 FCOJ futures，每张 15,000 pounds。Initial margin 总额是 \$16,000，maintenance margin 总额是 \$12,000，所以亏 \$4,000 触发 margin call。总数量是 30,000 pounds，价格下跌为
+\[
+\frac{4000}{30000}=0.1333\text{ dollars}=13.33\text{ cents}.
+\]
+因为是 long futures，价格下跌亏损，所以触发价是 $200-13.33=186.67$ cents/lb。
+\end{examplebox}
+
+\subsection{Basis risk 为什么 hedge 后还会不确定}
+\term{Basis}{基差} 定义为 spot price minus futures price：
+\[
+\text{basis}=S-F.
+\]
+接近 delivery period 时，同一资产的 futures price 和 spot price 应该 converge，否则可以通过交割套利获利。但实际 hedge 往往不是完美的，因为公司真实买卖的资产、地点、质量、时间和期货合约不完全一致。
+
+例如航空公司可能用 heating oil 或 gasoline futures 对冲 jet fuel 风险。这就是 \term{cross hedge}{交叉套保}。Cross hedge 的关键不是完全消灭风险，而是选择相关性高的 futures contract，让 hedge portfolio variance 最小。
+
+\subsection{Minimum variance hedge ratio}
+最小方差套保比率：
+\[
+h^\ast=\rho\frac{\sigma_S}{\sigma_F}.
+\]
+这个公式的直觉是：
+\begin{itemize}
+  \item $\rho$ 越高，futures 越能解释 spot risk，hedge ratio 越大。
+  \item $\sigma_S$ 越大，被套保资产波动越大，需要更多 futures。
+  \item $\sigma_F$ 越大，一张 futures 对风险的抵消能力越强，需要更少 futures。
+\end{itemize}
+
+\begin{examplebox}{Assignment 1 Q6}
+公司每 1 cent/gallon 的新燃料涨价损失 \$1,000,000，所以 exposure 是
+\[
+\frac{1000000}{0.01}=100000000\text{ gallons}.
+\]
+相关系数 $0.8$，新燃料波动率是 gasoline futures 的 $1.5$ 倍，所以 $h^\ast=0.8\times1.5=1.2$。公司怕价格上涨，因此 long futures。需要对冲 $120,000,000$ gallons，每张 40,000 gallons，所以 long 3,000 张。
+\end{examplebox}
+
+\subsection{Beta hedge 的符号含义}
+用 stock index futures 调整股票组合 beta：
+\[
+N^\ast=(\beta_T-\beta_P)\frac{V_A}{F_0M}.
+\]
+如果目标 beta 小于当前 beta，$N^\ast$ 为负，表示 short index futures；如果目标 beta 大于当前 beta，$N^\ast$ 为正，表示 long index futures。这里分母 $F_0M$ 是一张 futures 的 notional exposure，不是保证金。
+
+\section{Interest Rates, Zero Rates and FRA / 利率、零息与 FRA}
+
+\subsection{利率题先看 compounding convention}
+同样是 $8\%$，annual compounding, semiannual compounding, continuous compounding 代表不同 future value。衍生品定价里，所有 cash flows 必须用一致的 compounding convention 处理。
+
+若每年复利 $m$ 次：
+\[
+A=P\left(1+\frac{R_m}{m}\right)^{mT}.
+\]
+若连续复利：
+\[
+A=Pe^{R_cT},\qquad P=Ae^{-R_cT}.
+\]
+离散到连续的转换：
+\[
+R_c=m\ln\left(1+\frac{R_m}{m}\right).
+\]
+
+\begin{warningbox}{利率章常见错误}
+不要把 $6$ months 当成 $6$ 代入。所有 $T$ 都用 year fraction，例如 $6$ months $=0.5$，$3$ months $=0.25$。
+\end{warningbox}
+
+\subsection{Zero rate 和 discount factor 的关系}
+\term{Zero rate}{零息利率} 是今天到某个 maturity 的 single cash flow 利率。若连续复利 zero rate 为 $R(T)$，discount factor 是
+\[
+P(0,T)=e^{-R(T)T}.
+\]
+Coupon bond 不是一个 cash flow，而是一串 cash flows，所以价格是
+\[
+B=\sum_i C_iP(0,t_i).
+\]
+
+这也是 bootstrapping 的本质：短端 discount factors 已知后，用更长期债券或 swap 的价格方程，解出下一个未知 discount factor。
+
+\begin{workflowbox}{Bootstrapping 步骤}
+\begin{enumerate}
+  \item 画时间线，列出每期 coupon 和 final principal。
+  \item 已知 maturity 的 cash flow 先折现并扣掉。
+  \item 价格方程里只留下一个未知 discount factor。
+  \item 解出 discount factor 后，再转换成 zero rate。
+\end{enumerate}
+\end{workflowbox}
+
+\subsection{Forward rate 不是平均利率}
+Forward rate 是今天隐含的未来某段期间利率。设 $R_1$ 是到 $T_1$ 的 zero rate，$R_2$ 是到 $T_2$ 的 zero rate，则连续复利下：
+\[
+e^{R_2T_2}=e^{R_1T_1}e^{R_F(T_2-T_1)}.
+\]
+取对数得到：
+\[
+R_F=\frac{R_2T_2-R_1T_1}{T_2-T_1}.
+\]
+它不是 $R_1$ 和 $R_2$ 的简单平均。若 yield curve upward sloping，forward rate 可能高于较长期 zero rate。
+
+\subsection{FRA 的结算时点}
+Forward Rate Agreement 锁定未来 $T_1$ 到 $T_2$ 的借贷利率。核心 cash flow 是 rate difference times notional times period length。若约定利率为 $R_K$，实际市场利率为 $R_M$，本金 $L$，期间长度 $\tau$，期末利息差是
+\[
+L(R_M-R_K)\tau
+\]
+或反方向，取决于你是 receiving fixed 还是 paying fixed。实际 FRA 常在 $T_1$ 结算，因此要把 $T_2$ 的利息差折现回 $T_1$。这就是很多题会多除一个 $1+R_M\tau$ 的原因。
+
+\section{Forward and Futures Pricing / 远期与期货定价}
+
+\subsection{Cash-and-carry 的完整逻辑}
+无收益 investment asset 的 forward price：
+\[
+F_0=S_0e^{rT}.
+\]
+这不是凭空来的。构造组合 A：今天借钱买入现货并持有到期。到期你拥有一单位 asset，且需要还 $S_0e^{rT}$。组合 B：今天进入 long forward，到期支付 $F_0$ 买入同一单位 asset。两者到期都得到一单位 asset，所以 financing cost 和 forward delivery price 必须一致。
+
+如果市场 $F_0>S_0e^{rT}$，forward 太贵。套利者可以 borrow $S_0$, buy spot, short forward。到期交割资产收到 $F_0$，还贷款 $S_0e^{rT}$，锁定 profit。若 $F_0<S_0e^{rT}$，做 reverse cash-and-carry。
+
+\begin{workflowbox}{Forward pricing 公式选择}
+\begin{enumerate}
+  \item 没有收益、没有成本：$F_0=S_0e^{rT}$。
+  \item 有确定 cash income，现值为 $I$：$F_0=(S_0-I)e^{rT}$。
+  \item 有 continuous yield $q$：$F_0=S_0e^{(r-q)T}$。
+  \item 外汇：$F_0=S_0e^{(r_d-r_f)T}$。
+  \item 商品有 storage cost 现值 $U$：$F_0=(S_0+U)e^{rT}$。
+\end{enumerate}
+\end{workflowbox}
+
+\subsection{I 和 q 不要混用}
+$I$ 是确定现金收益的 present value，例如已知 dividend in dollars。它是金额，直接从 $S_0$ 中减掉。$q$ 是 continuous dividend yield，是年化比例，放在指数里。Stock index futures 常用 $q$，单只股票已知几次现金股利常用 $I$。
+
+\begin{examplebox}{Assignment 2 Q1}
+股票 $S_0=100$，2 个月和 5 个月各支付 \$1，$r=8\%$ continuous，6 个月 forward。先算 dividend present value：
+\[
+I=e^{-0.08(2/12)}+e^{-0.08(5/12)}=1.9540.
+\]
+再代入
+\[
+F_0=(100-1.9540)e^{0.08(0.5)}=102.05.
+\]
+三个月后问的是 old forward contract 的 value，不是重新问初始 forward price，所以要使用旧 delivery price $K$ 并注意 long/short 符号。
+\end{examplebox}
+
+\subsection{Currency forward 的 domestic 和 foreign}
+外汇远期：
+\[
+F_0=S_0e^{(r_d-r_f)T}.
+\]
+这里 $S_0$ 的报价方向决定 domestic 和 foreign。若 $S_0$ 是 USD per EUR，则 domestic currency 是 USD，foreign currency 是 EUR。Foreign currency 可以看成一项提供 foreign risk-free yield 的资产，所以 $r_f$ 像 dividend yield 一样降低 forward price。
+
+\subsection{Commodity: storage cost 和 convenience yield}
+商品定价比股票更复杂，因为商品可能有 storage cost，也可能有 convenience yield。Storage cost 提高持有现货成本，因此提高 futures price。Convenience yield 是持有实物带来的非现金收益，例如保证生产不断、避免短缺，所以降低 futures price。
+
+连续形式：
+\[
+F_0=S_0e^{(r+u-y)T}.
+\]
+对 consumption asset，这个公式经常不是 exact price，而是 upper bound。因为 reverse cash-and-carry 可能需要 short sell commodity，但实物商品并不总能轻易卖空或借入。
+
+\subsection{Contango 和 backwardation}
+\term{Contango}{正向市场} 通常指远月价格高于近月价格，常见于 financing cost 和 storage cost 占主导时。\term{Backwardation}{反向市场} 指近月价格高于远月价格，常见于短期供给紧张或 convenience yield 很高时。
+
+Oil futures supplement 的重点不是记某一天油价，而是理解 futures curve 反映库存、运输、地缘风险和短期 scarcity。地缘冲击通常先影响 near-month contracts，因为市场最担心眼前 supply disruption。
+
+\section{Interest Rate Futures / 利率期货}
+
+\subsection{Bond quoted price 和 cash price}
+Treasury bond 的 quoted price 通常不含 accrued interest。买方真正支付的是
+\[
+\text{Cash price}=\text{Quoted price}+\text{Accrued interest}.
+\]
+报价 102-07 表示 $102+7/32=102.21875$，不是 $102.07$。Accrued interest 取决于 coupon period 中已经过去的天数。
+
+\begin{workflowbox}{债券报价题步骤}
+\begin{enumerate}
+  \item 把 32nds quote 转成 decimal quote。
+  \item 找上一付息日到 settlement date 的 elapsed days。
+  \item 计算 accrued interest = coupon payment times elapsed days / coupon period days。
+  \item Cash price = quoted price + accrued interest。
+\end{enumerate}
+\end{workflowbox}
+
+\subsection{Conversion factor 和 CTD}
+Treasury bond futures 允许 short party 选择一篮子 deliverable bonds 中的一只交割。为了让不同 coupon 和 maturity 的债券可比，交易所有 conversion factor。
+
+交割时 short 收到的 invoice amount 近似为：
+\[
+\text{Invoice amount}=\text{Futures settlement price}\times\text{conversion factor}+\text{accrued interest}.
+\]
+Short 会选 \term{cheapest-to-deliver}{CTD} bond，即交割净成本最低的债券。CTD 不是价格最低的债券，而是 relative delivery economics 最优的债券。
+
+\subsection{Eurodollar futures 的方向}
+Eurodollar futures quote:
+\[
+Q=100-\text{implied 3-month LIBOR}.
+\]
+所以 quote 上升表示利率下降，quote 下降表示利率上升。借款人怕未来利率上升，利率上升时期货价格下降，因此借款人应该 short Eurodollar futures。
+
+\begin{examplebox}{Assignment 2 Q8}
+Quote $98.40$ 表示 implied LIBOR 为 $1.60\%$。公司未来按 LIBOR + $0.5\%$ 借款，所以锁定 borrowing rate 约 $2.10\%$。如果实际 LIBOR 是 $1.3\%$，最终 settlement price 是 $98.70$。
+\end{examplebox}
+
+\subsection{Duration hedge}
+债券价格对 yield 的敏感度近似为：
+\[
+\frac{\Delta B}{B}\approx-D\Delta y.
+\]
+债券组合用 Treasury bond futures 对冲时：
+\[
+N^\ast=\frac{PD_P}{FD_F}.
+\]
+如果你持有 long bond portfolio，担心 rates rise 导致 bond prices fall，通常 short futures。Rates rise 时 futures price 也下跌，short futures gain 抵消债券损失。
+
+\section{Swaps / 互换}
+
+\subsection{Plain vanilla swap 的现金流}
+Plain vanilla interest rate swap 是一方 pay fixed and receive floating，另一方 receive fixed and pay floating。Notional principal 通常不交换，只用于计算利息。
+
+如果公司原本有 floating-rate loan，比如支付 LIBOR + $0.8\%$，同时进入 pay fixed $5\%$ receive LIBOR 的 swap，那么 LIBOR 支出和 LIBOR 收入抵消，最终近似固定成本为 $5.8\%$。
+
+\subsection{Swap 可以拆成 bonds}
+对 pay fixed, receive floating 的一方：
+\[
+V_{\text{swap}}=B_{\text{floating}}-B_{\text{fixed}}.
+\]
+直觉是：你收 floating cash flows，好像 long 一只 floating-rate bond；你付 fixed cash flows，好像 short 一只 fixed-rate bond。Receive fixed, pay floating 的一方符号相反。
+
+Floating-rate bond 在 reset date 附近通常约等于 par，因为下一期 coupon 会按市场利率重置。Fixed-rate bond 要把所有固定 coupon 和 principal 用当前 zero curve 折现。
+
+\subsection{Swap 也可以拆成一串 FRA}
+每一期 swap payment 都像一个 FRA：固定利率和未来浮动利率之间的差额乘 notional 再乘 year fraction。把所有未来净现金流折现求和，就得到 swap value。
+
+Par swap rate 是让初始 swap value 为零的 fixed rate。若 discount factors 已知，支付间隔为 $\alpha_i$，常见形式是
+\[
+R_{\text{swap}}=\frac{1-P(0,T_n)}{\sum_{i=1}^{n}\alpha_iP(0,T_i)}.
+\]
+Assignment 3 Q1 用 par swap 等价 par coupon bond 的方法，从 2 年和 3 年 swap rates 推出 zero rates。
+
+\subsection{Comparative advantage 题}
+比较优势题先比较两家公司在 fixed market 和 floating market 的 borrowing spread。两个 spread 的差额是 total potential gain。然后让每家公司在相对有优势的市场借款，再通过 swap 达到各自真正想要的 fixed 或 floating exposure。
+
+\begin{workflowbox}{Comparative advantage 题步骤}
+\begin{enumerate}
+  \item 计算 fixed borrowing spread。
+  \item 计算 floating borrowing spread。
+  \item Quality spread differential = 两个 spread 的差。
+  \item 扣除 financial intermediary fee。
+  \item 分配剩余 gain，并检查双方最终成本都优于直接借款。
+\end{enumerate}
+\end{workflowbox}
+
+\section{Securitization / 证券化}
+
+\subsection{证券化不是消灭风险，而是重新切分风险}
+Securitization 把 loans 或 mortgages 的现金流转给 SPV，再由 SPV 发行不同 seniority 的 securities。SPV 的作用是隔离 originator 的破产风险，让投资者主要面对 collateral pool 的现金流风险。
+
+Tranches 是风险分层。Senior tranche 优先拿现金流，风险较低；equity tranche 最后拿剩余收益，但承担 first loss。Mezzanine tranche 位于中间。
+
+\subsection{Waterfall 的损失方向}
+正常现金流通常从 senior 往下分配；损失从 equity 往上吸收。做损失题时，不能把 total mortgage loss 直接乘到每个 tranche 上。必须先打穿 equity，再打 mezzanine，再打 senior。
+
+\begin{examplebox}{Assignment 3 Q5 第一层 ABS}
+ABS: senior $75\%$, mezzanine $20\%$, equity $5\%$。Mortgage loss $16\%$。
+\begin{itemize}
+  \item Equity thickness $5\%$，先全部损失，所以 equity loss rate $100\%$。
+  \item 剩余 loss $16\%-5\%=11\%$ 进入 mezzanine。
+  \item Mezzanine principal $20\%$，loss rate $11/20=55\%$。
+  \item Senior 还没有被打到，loss rate $0\%$。
+\end{itemize}
+\end{examplebox}
+
+\subsection{ABS CDO 的风险放大}
+ABS CDO 的 collateral 不是原始 mortgages，而是 ABS 的 mezzanine tranches。第一层 ABS mezzanine 的损失率会成为 CDO collateral loss。Assignment 3 Q5 中，ABS mezzanine loss 是 $55\%$，所以 CDO collateral loss 是 $55\%$。CDO equity $5\%$ 和 mezzanine $20\%$ 被完全打穿，CDO senior 承担
+\[
+\frac{55-25}{75}=40\%
+\]
+的损失。这说明再证券化会集中 mezzanine risk，并让看似 senior 的 tranche 也暴露于严重损失。
+
+\section{Option Properties / 期权性质}
+
+\subsection{Payoff, profit, exercise condition}
+Long call payoff:
+\[
+\max(S_T-K,0).
+\]
+Long put payoff:
+\[
+\max(K-S_T,0).
+\]
+Payoff 是到期合约支付；profit 是 payoff 减 premium 的成本。如果考虑 time value，premium 还要累积到 maturity。简单图形题常直接 payoff minus premium。
+
+Exercise condition 和 profit condition 不一样。Call 只要 $S_T>K$ 就会 exercise，但买方真正盈利需要 $S_T>K+\text{premium}$。Put 只要 $S_T<K$ 就会 exercise，但盈利需要 $S_T<K-\text{premium}$。
+
+\subsection{Option bounds}
+European call on non-dividend stock 的下界：
+\[
+c\geq \max(S_0-Ke^{-rT},0).
+\]
+European put 的下界：
+\[
+p\geq \max(Ke^{-rT}-S_0,0).
+\]
+若价格低于下界，就可以买入 underpriced option 并卖出复制组合进行 arbitrage。
+
+\subsection{Put-call parity 的复制逻辑}
+无股利 European options:
+\[
+c+Ke^{-rT}=p+S_0.
+\]
+有确定股利现值 $D$:
+\[
+c+D+Ke^{-rT}=p+S_0.
+\]
+左边是 call + cash for strike + dividend reserve，右边是 put + stock。到期无论 $S_T>K$ 还是 $S_T<K$，两边 cash flow 相同。因此今天价格必须相同。
+
+\begin{examplebox}{Assignment 3 Q8}
+Call 和 put 都为 \$3，$K=20$，$T=0.25$，$r=10\%$，$S_0=19$，一个月后有 \$1 dividend。左边
+\[
+3+e^{-0.10/12}+20e^{-0.10(0.25)}\approx23.50,
+\]
+右边 $3+19=22$。左边贵，所以 sell left side and buy right side：short call, borrow present value of strike, buy put and stock。
+\end{examplebox}
+
+\subsection{American option 的提前行权}
+American option 的 value 至少等于 European option，因为它多了提前行权权利。不支付股利股票的 American call 通常不提前行权，因为提前行权会失去 time value，并提前支付 strike。American put 可能提前行权，因为深度实值时提前拿到 $K-S$ 可以赚利息。
+
+\section{Trading Strategies / 期权交易策略}
+
+\subsection{策略题不要背图，先逐项相加}
+Trading strategies 的名字很多，但计算方法很统一：列出每个 option leg，写 payoff，按 strikes 把 $S_T$ 分区间，然后加总。
+
+\begin{workflowbox}{Option strategy 题步骤}
+\begin{enumerate}
+  \item 列出每个 leg：long/short, call/put, strike, premium。
+  \item 写出每个 leg 的 payoff，short option 要取负。
+  \item 按所有 strikes 切分 $S_T$ 区间。
+  \item 每个区间加总 payoff。
+  \item 加上收到的 premium 或减去支付的 premium，得到 profit。
+\end{enumerate}
+\end{workflowbox}
+
+\subsection{Covered call 和 protective put}
+Covered call = long stock + short call。它适合持有股票但认为上涨空间有限的投资者。卖 call 收 premium，但股票涨过 strike 后，上方收益被 short call 抵消。
+
+Protective put = long stock + long put。它像保险。如果股票大跌，put payoff 提供最低卖出保护；如果股票上涨，仍保留 upside，但成本是 premium。
+
+\subsection{Spreads 和 combinations}
+Bull spread 通常 buy low strike call and sell high strike call，押温和上涨。Bear spread 押温和下跌。Butterfly spread 通常 buy low strike, buy high strike, sell two middle strike options，押到期价格靠近中间 strike。
+
+Straddle = long call + long put, same strike and same maturity，押大波动不押方向。Strangle 也是押大波动，但 call 和 put 的 strikes 不同，成本通常更低，要求价格移动更大。Short straddle 或 short strangle 是押低波动，但极端行情下亏损可能很大。
+
+\begin{examplebox}{Assignment 3 Q9}
+Put strikes 55, 60, 65，价格 4, 6, 9。构造 butterfly：buy 55 put, buy 65 put, sell two 60 puts。净成本
+\[
+4+9-2(6)=1.
+\]
+Profit 在 $S_T=60$ 附近最大，亏损区间是 $S_T<56$ 或 $S_T>64$。
+\end{examplebox}
+
+\section{Binomial Trees / 二叉树}
+
+\subsection{一步树的两种理解}
+Binomial tree 假设一个 period 后股票只会上涨到 $S_0u$ 或下跌到 $S_0d$。定价有两种等价方法：replicating portfolio 和 risk-neutral valuation。
+
+复制组合方法找 $\Delta$ shares 和 cash position，使组合在 up/down 两个状态都等于 derivative payoff。由于未来完全复制成功，今天价格必须等于复制组合今天的成本。
+
+Risk-neutral valuation 是更快的写法：
+\[
+p=\frac{e^{r\Delta t}-d}{u-d},\qquad
+f=e^{-r\Delta t}[pf_u+(1-p)f_d].
+\]
+$p$ 不是真实上涨概率，而是 pricing weight。
+
+\subsection{两步树从终点往前推}
+多步树先画 stock price tree，再在 maturity 写 terminal payoff，然后 backward induction。每一个中间节点都像一个一步树：
+\[
+f_{\text{node}}=e^{-r\Delta t}[pf_u+(1-p)f_d].
+\]
+如果是 recombining tree，先上后下和先下后上到达同一节点，可以减少计算。
+
+\begin{examplebox}{Assignment 4 Q1}
+$S_0=50$, $u=1.06$, $d=0.95$, $K=51$, $\Delta t=0.25$, $r=5\%$。先算
+\[
+p=\frac{e^{0.05(0.25)}-0.95}{1.06-0.95}=0.568895.
+\]
+终点 stock prices 是 $56.18$, $50.35$, $45.125$。Call payoffs 是 $5.18,0,0$，向前折现得到 call value 约 $1.64$。
+\end{examplebox}
+
+\subsection{American option 每个节点都要比}
+American option 不只是到初始节点多比较一次，而是每个可行权节点都要比较：
+\[
+\text{American value}=\max(\text{immediate exercise value},\text{continuation value}).
+\]
+American put 的 immediate exercise value 是 $K-S$。Assignment 4 Q2 中 down node 的股价是 $47.5$，immediate exercise 是 $51-47.5=3.5$，continuation value 约 $2.87$，所以这个节点应该提前行权。
+
+\begin{warningbox}{Assignment 4 复习重点}
+Assignment 4 没有官方 solution PDF。本讲义中的解析按 Lecture 12 的方法推导。考试复习时不要只背答案，要能独立完成四步：画 stock tree，写 terminal payoff，算 risk-neutral probability，backward induction。American put 还要在每个节点比较 early exercise。
+\end{warningbox}
