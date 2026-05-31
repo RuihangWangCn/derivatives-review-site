@@ -20,12 +20,22 @@ import {
   Target,
   X
 } from "lucide-react";
-import { formulas, modules, practiceQuestions, sourceMaterials, type Formula, type PracticeQuestion } from "./content";
+import {
+  formulas,
+  moduleDeepDives,
+  modules,
+  practiceQuestions,
+  sourceMaterials,
+  type DeepDiveSection,
+  type Formula,
+  type PracticeQuestion
+} from "./content";
 
-type TabKey = "notes" | "points" | "practice" | "pitfalls" | "sources";
+type TabKey = "deep" | "notes" | "points" | "practice" | "pitfalls" | "sources";
 type Grade = "correct" | "partial" | "wrong";
 
 const tabLabels: Record<TabKey, string> = {
+  deep: "详细讲义",
   notes: "学习笔记",
   points: "讲义要点",
   practice: "例题解析",
@@ -52,7 +62,7 @@ function includesText(text: string, query: string) {
 
 export function App() {
   const [selectedModuleId, setSelectedModuleId] = useState(modules[3].id);
-  const [activeTab, setActiveTab] = useState<TabKey>("notes");
+  const [activeTab, setActiveTab] = useState<TabKey>("deep");
   const [query, setQuery] = useState("");
   const [englishOn, setEnglishOn] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -62,6 +72,7 @@ export function App() {
 
   const selectedModule = modules.find((module) => module.id === selectedModuleId) ?? modules[0];
 
+  const selectedDeepDives = moduleDeepDives[selectedModule.id] ?? [];
   const moduleFormulas = formulas.filter((formula) => selectedModule.formulaIds.includes(formula.id));
   const moduleQuestions = practiceQuestions.filter((question) => question.moduleId === selectedModule.id);
   const activeQuestion = moduleQuestions[0] ?? practiceQuestions.find((question) => question.moduleId === "forward-pricing") ?? practiceQuestions[0];
@@ -71,7 +82,24 @@ export function App() {
     if (!q) return { modules: [], questions: [], formulas: [] };
     return {
       modules: modules.filter((module) =>
-        [module.titleZh, module.titleEn, module.overviewZh, module.overviewEn, module.examPhrases.join(" ")]
+        [
+          module.titleZh,
+          module.titleEn,
+          module.overviewZh,
+          module.overviewEn,
+          module.keyPoints.join(" "),
+          module.beginnerNotes.join(" "),
+          module.examPhrases.join(" "),
+          ...(moduleDeepDives[module.id] ?? []).flatMap((section) => [
+            section.headingZh,
+            section.headingEn,
+            ...section.paragraphs,
+            ...(section.steps ?? []),
+            section.exampleZh ?? "",
+            section.examTipZh ?? "",
+            ...(section.terms ?? [])
+          ])
+        ]
           .some((text) => includesText(text, q))
       ),
       questions: practiceQuestions.filter((question) =>
@@ -116,7 +144,7 @@ export function App() {
 
   const selectModule = (moduleId: string) => {
     setSelectedModuleId(moduleId);
-    setActiveTab("notes");
+    setActiveTab("deep");
     setMobileNavOpen(false);
   };
 
@@ -268,6 +296,48 @@ export function App() {
               ))}
             </div>
 
+            {activeTab === "deep" && (
+              <section className="study-section deep-section">
+                <div className="detail-intro">
+                  <div>
+                    <strong>本章超详细讲义 / Full Review Notes</strong>
+                    <p>{selectedModule.overviewZh}</p>
+                    {englishOn && <p className="english-copy">{selectedModule.overviewEn}</p>}
+                  </div>
+                  <div className="detail-stat-grid">
+                    <span>讲义来源</span>
+                    <strong>{selectedModule.sources.length}</strong>
+                    <span>详细段落</span>
+                    <strong>{selectedDeepDives.reduce((sum, section) => sum + section.paragraphs.length, 0)}</strong>
+                    <span>关联题目</span>
+                    <strong>{moduleQuestions.length}</strong>
+                  </div>
+                </div>
+
+                <div className="deep-stack">
+                  {selectedDeepDives.map((section, index) => (
+                    <DeepDiveCard key={`${selectedModule.id}-${section.headingZh}`} section={section} index={index} englishOn={englishOn} />
+                  ))}
+                </div>
+
+                <div className="chapter-question-strip">
+                  <div>
+                    <strong>本章 assignment 练习入口</strong>
+                    <p>先读上面的推导，再做题目。题目解析和讲义使用同一套公式与符号。</p>
+                  </div>
+                  <div className="chapter-question-list">
+                    {moduleQuestions.slice(0, 4).map((question) => (
+                      <button key={question.id} onClick={() => setActiveTab("practice")}>
+                        <span>{question.source}</span>
+                        {question.titleZh}
+                      </button>
+                    ))}
+                    {moduleQuestions.length === 0 && <span className="empty-inline">本章无单独 assignment 计算题</span>}
+                  </div>
+                </div>
+              </section>
+            )}
+
             {activeTab === "notes" && (
               <section className="study-section">
                 <div className="intuition-card">
@@ -416,6 +486,52 @@ export function App() {
         </section>
       </main>
     </div>
+  );
+}
+
+function DeepDiveCard({ section, index, englishOn }: { section: DeepDiveSection; index: number; englishOn: boolean }) {
+  return (
+    <section className="deep-card">
+      <div className="deep-kicker">Part {index + 1}</div>
+      <h2>{section.headingZh}</h2>
+      {englishOn && <p className="deep-english-title">{section.headingEn}</p>}
+      <div className="deep-copy">
+        {section.paragraphs.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+      </div>
+
+      {section.steps && (
+        <div className="deep-steps-block">
+          <strong>解题步骤 / Workflow</strong>
+          <ol className="deep-steps">
+            {section.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {section.exampleZh && (
+        <div className="worked-example">
+          <strong>Assignment 例子</strong>
+          <p>{section.exampleZh}</p>
+        </div>
+      )}
+
+      {section.examTipZh && (
+        <div className="exam-tip">
+          <AlertTriangle size={17} />
+          <span>{section.examTipZh}</span>
+        </div>
+      )}
+
+      {section.terms && (
+        <div className="phrase-list deep-terms">
+          {section.terms.map((term) => <span key={term}>{term}</span>)}
+        </div>
+      )}
+    </section>
   );
 }
 
